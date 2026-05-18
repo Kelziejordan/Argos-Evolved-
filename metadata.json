@@ -1,0 +1,11 @@
+{
+  "name": "Nexus AI Gateway",
+  "description": "A high-performance AI workspace for intelligent automation and multimodal interaction.",
+  "requestFramePermissions": [
+    "camera",
+    "microphone"
+  ],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

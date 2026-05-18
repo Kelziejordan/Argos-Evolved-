@@ -1,0 +1,55 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Global Safety Net
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Global Helpers
+    function isSignedIn() { return request.auth != null; }
+    function isOwner(data) { return isSignedIn() && data.userId == request.auth.uid; }
+    function isValidId(id) { return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$'); }
+    function incoming() { return request.resource.data; }
+    function existing() { return resource.data; }
+
+    // Trade Validation
+    function isValidTrade(data) {
+      return data.keys().hasAll(['symbol', 'type', 'price', 'quantity', 'status', 'timestamp', 'userId'])
+        && data.keys().size() >= 7 
+        && data.symbol is string && data.symbol.size() <= 20
+        && data.type in ['LONG', 'SHORT']
+        && data.price is number && data.price > 0
+        && data.quantity is number && data.quantity > 0
+        && data.status in ['OPEN', 'CLOSED', 'LIQUIDATED']
+        && data.userId == request.auth.uid;
+    }
+
+    match /trades/{tradeId} {
+      allow get: if isOwner(existing());
+      allow list: if isSignedIn() && resource.data.userId == request.auth.uid;
+      
+      allow create: if isSignedIn() 
+        && isValidId(tradeId)
+        && isValidTrade(incoming())
+        && (incoming().timestamp == request.time || incoming().timestamp is string); // Allow string if formatted (fallback)
+
+      allow update: if isOwner(existing())
+        && isValidTrade(incoming())
+        && incoming().userId == existing().userId
+        && incoming().symbol == existing().symbol
+        && existing().status == 'OPEN' 
+        && (
+          (incoming().status in ['CLOSED', 'LIQUIDATED'] && 
+           incoming().diff(existing()).affectedKeys().hasOnly(['status', 'pnl']))
+          ||
+          (incoming().diff(existing()).affectedKeys().hasOnly(['quantity']))
+        );
+    }
+
+    match /signals/{signalId} {
+      allow read: if isSignedIn();
+      allow write: if false; 
+    }
+  }
+}

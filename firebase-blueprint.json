@@ -1,0 +1,43 @@
+{
+  "entities": {
+    "trade": {
+      "title": "Trade Execution",
+      "description": "A record of an executed trade on the hyperbot platform.",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string", "description": "Trading pair, e.g., BTC/USD" },
+        "type": { "type": "string", "enum": ["LONG", "SHORT"], "description": "Position direction" },
+        "price": { "type": "number", "description": "Execution price" },
+        "quantity": { "type": "number", "description": "Size of the position" },
+        "status": { "type": "string", "enum": ["OPEN", "CLOSED", "LIQUIDATED"], "description": "Current status" },
+        "timestamp": { "type": "string", "format": "date-time", "description": "Execution time" },
+        "pnl": { "type": "number", "description": "Profit and loss" },
+        "userId": { "type": "string", "description": "Owner of the trade" }
+      },
+      "required": ["symbol", "type", "price", "quantity", "status", "timestamp", "userId"]
+    },
+    "signal": {
+      "title": "Neural Signal",
+      "description": "AI-generated trading signals based on sentiment and liquidity analysis.",
+      "type": "object",
+      "properties": {
+        "symbol": { "type": "string" },
+        "confidence": { "type": "number" },
+        "action": { "type": "string", "enum": ["BUY", "SELL", "HOLD"] },
+        "reasoning": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" }
+      },
+      "required": ["symbol", "confidence", "action", "reasoning", "timestamp"]
+    }
+  },
+  "firestore": {
+    "trades/{tradeId}": {
+      "schema": "trade",
+      "description": "Collection of all trades executed by users."
+    },
+    "signals": {
+      "schema": "signal",
+      "description": "Global feed of AI trading signals."
+    }
+  }
+}
