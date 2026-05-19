@@ -4,9 +4,9 @@ import { createServer as createViteServer } from "vite";
 import dotenv from "dotenv";
 import { marketState } from "./server/anatomy/state";
 import { getGemini } from "./server/organs/gemini";
-import { startMarketPulse } from "./server/brain/pulseEngine";
-import { initializeNervousCenter } from "./server/nervous-system/NervousCenter";
-import { loadSnapshot, saveSnapshot } from "./server/memory/persistence";
+import { bootOrganism } from "./server/runtime/organism";
+import { eventBus } from "./server/nervous-system/event-bus/Bus";
+import { NexusEvent } from "./server/nervous-system/event-bus/Registry";
 
 dotenv.config();
 
@@ -18,21 +18,20 @@ async function startServer() {
   
   const ai = getGemini();
 
-  // Load Organism Memory
-  const savedState = loadSnapshot();
-  if (savedState) {
-    Object.assign(marketState, savedState);
-  }
-
-  // Spinal Cord Initialization
-  initializeNervousCenter();
-  
-  // Heartbeat Initialization
-  startMarketPulse();
+  // Boot the Organism Architecture (Spinal Cord, Heart, Brain, Logic Gates)
+  await bootOrganism();
 
   // API Routes
   app.get("/api/market-pulse", (req, res) => {
     res.json(marketState);
+  });
+
+  app.post("/api/command", (req, res) => {
+    const { command, args } = req.body;
+    if (!command) return res.status(400).json({ error: "Missing command" });
+
+    eventBus.dispatch(NexusEvent.COMMAND_RECEIVED, { command, args }, 'API_COMMAND_GATEWAY');
+    res.json({ status: "ACKNOWLEDGED", command });
   });
 
   app.post("/api/kraken/simulate", async (req, res) => {

@@ -1,6 +1,7 @@
 import { marketState, Signal } from "../anatomy/state";
 import { CONFIG } from "../genetics/config";
-import { eventBus, NexusEvent } from "../nervous-system/EventBus";
+import { eventBus } from "../nervous-system/event-bus/Bus";
+import { NexusEvent } from "../nervous-system/event-bus/Registry";
 
 export const generateSignals = () => {
   if (Math.random() > (1 - CONFIG.SIGNAL_PROBABILITY)) {
@@ -24,7 +25,7 @@ export const generateSignals = () => {
       ...marketState.activeSignals.slice(0, 4)
     ];
     
-    eventBus.dispatch(NexusEvent.SIGNAL_GENERATED, newSignal);
+    eventBus.dispatch(NexusEvent.SIGNAL_GENERATED, newSignal, 'BRAIN_SIGNAL_GENERATOR');
     return newSignal;
   }
   return null;

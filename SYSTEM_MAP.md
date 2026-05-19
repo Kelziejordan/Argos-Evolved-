@@ -3,33 +3,43 @@
 ## The Organism Anatomy
 
 ### 🧠 BRAIN (`/server/brain`)
-*   **Signal Generator**: Evaluates market telemetry to produce autonomous "Neural Signals".
-*   **Reasoning Engine**: (Future) Will handle Gemini-powered trade justification.
+*   **Signal Generator**: Evaluates market telemetry to produce "Neural Signals".
+*   **Risk Engine**: `/server/brain/risk/Engine.ts` - Validates signals and system health (Immune System).
 
 ### 🧬 GENETICS (`/server/genetics`)
-*   **Config**: Centralized constants (Pulse intervals, symbols, probabilities).
-*   **Aggression Matrix**: Defines the "risk-dna" of the bot (how aggressive it trades).
+*   **Config**: Centralized constants and security firewalls.
 
 ### 🫁 ORGANS (`/server/organs`)
-*   **Kraken**: Sensory organ for real-time exchange data.
-*   **Gemini**: The cognitive organ for natural language interaction.
-*   **Firebase**: The persistence organ (Memory storage).
+*   **Kraken/Gemini**: External interface organs.
 
 ### ⚡ NERVOUS SYSTEM (`/server/nervous-system`)
-*   **Pulse Engine**: The "heartbeat" that triggers every 5 seconds to sync data and drift simulations.
-*   **Event Bus**: Routes signals from the Brain to the Interface.
+*   **Hardened Event Bus**: Central routing via `/server/nervous-system/event-bus/Bus.ts`.
+*   **Registry**: Canonical event typing in `/server/nervous-system/event-bus/Registry.ts`.
+*   **Nervous Center**: Coordination layer between subsystems.
 
-### 💾 MEMORY (`/server/anatomy` & `/server/memory`)
-*   **State Machine**: One source of truth for the market and system status.
-*   **Persistence**: (In Progress) Handles snapshotting state to Cloud storage.
+### 💾 MEMORY (`/server/memory`)
+*   **Persistent Event Log**: JSONL append-only log in `/logs/organism_events.jsonl` (Lifecycle continuity).
+*   **Snapshots**: State persistence in `/snapshots/organism_snapshots.jsonl` with `known_good` tagging.
 
-### 🖥️ INTERFACE (`/src/components`)
-*   **Command Hall**: The primary "Operator" interface.
-*   **Telemetry**: Real-time visualization of the organism's internal metrics.
+### 🛡️ GOVERNANCE (`/server/governance`)
+*   **Master Charter**: v1.1 Operational law.
+*   **Engineering Protocol**: Strict architectural boundaries.
+*   **Runtime Ruleset**: 10 hard-coded execution rules.
+
+### 🚀 RUNTIME (`/server/runtime`)
+*   **Organism Boot**: `/server/runtime/organism.ts` - Master lifecycle controller.
+*   **Approval System**: `/server/nervous-system/ApprovalSystem.ts` - Token-based human-in-the-loop authorization.
 
 ---
 
-## Data Flow
-1. **Pulse** triggers -> **Organs** fetch data -> **Brain** evaluates -> **State** updates.
-2. **User Command** -> **Gateway (Gemini)** interprets -> **Nervous System** triggers action -> **Brain** executes trade.
-3. **State Sync** -> **NervousCore (Context)** broadcasts to **UI Modules**.
+## The Nervous Spinal Cord Flow (v1.1)
+1. **Pulse** -> `PULSE_TICK`.
+2. **NervousCenter** -> Fetches market data -> `MARKET_UPDATED`.
+3. **Brain** -> Generates signals -> `SIGNAL_GENERATED`.
+4. **RiskEngine** -> Validates stability -> `RISK_CHECK_PASSED` or `KILL_SWITCH_TRIGGERED`.
+5. **ApprovalSystem** -> (If required) Token generated -> `APPROVAL_REQUIRED`.
+6. **User** -> `APPROVE [token]`.
+7. **NervousCenter** -> Executes -> `ORDER_EXECUTED`.
+8. **Logger** -> Persists ALL events to `organism_events.jsonl`.
+9. **Persistence** -> `MEMORY_SNAPSHOT(known_good=true)` after successful execution.
+

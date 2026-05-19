@@ -1,0 +1,61 @@
+
+/**
+ * CANONICAL EVENT REGISTRY
+ * 
+ * Every interaction within the organism must be represented here.
+ * This registry ensures type safety across the nervous system.
+ */
+
+export enum NexusEvent {
+  // SENSORY (Organs -> Nervous System)
+  MARKET_DATA_RECEIVED = 'MARKET_DATA_RECEIVED',
+  EXCHANGE_CONNECTED = 'EXCHANGE_CONNECTED',
+  EXCHANGE_DISCONNECTED = 'EXCHANGE_DISCONNECTED',
+
+  // COGNITIVE (Brain -> Nervous System)
+  SIGNAL_GENERATED = 'SIGNAL_GENERATED',
+  SIGNAL_REJECTED = 'SIGNAL_REJECTED',
+  
+  // REGULATORY (Risk -> Nervous System)
+  RISK_CHECK_PASSED = 'RISK_CHECK_PASSED',
+  RISK_CHECK_FAILED = 'RISK_CHECK_FAILED',
+  KILL_SWITCH_TRIGGERED = 'KILL_SWITCH_TRIGGERED',
+
+  // OPERATIONAL (Internal Transitions)
+  PULSE_TICK = 'PULSE_TICK',
+  STATE_TRANSITION = 'STATE_TRANSITION',
+  MEMORY_SNAPSHOT = 'MEMORY_SNAPSHOT',
+  
+  // COMMAND (User -> Nervous System)
+  COMMAND_RECEIVED = 'COMMAND_RECEIVED',
+  APPROVAL_REQUIRED = 'APPROVAL_REQUIRED',
+  APPROVAL_GRANTED = 'APPROVAL_GRANTED',
+  APPROVAL_REJECTED = 'APPROVAL_REJECTED',
+
+  // EXECUTION (Nervous System -> Organs)
+  ORDER_PLACED = 'ORDER_PLACED',
+  ORDER_EXECUTED = 'ORDER_EXECUTED',
+  ORDER_FAILED = 'ORDER_FAILED',
+
+  // FAILURES
+  FATAL_FAILURE = 'FATAL_FAILURE',
+  RECOVERABLE_FAILURE = 'RECOVERABLE_FAILURE',
+  DEGRADED_FAILURE = 'DEGRADED_FAILURE',
+
+  // SYSTEM
+  SYSTEM_ALERT = 'SYSTEM_ALERT',
+  AUDIT_LOG = 'AUDIT_LOG',
+  ORGANISM_INIT = 'ORGANISM_INIT',
+  ROLLBACK_COMPLETE = 'ROLLBACK_COMPLETE',
+  MARKET_UPDATED = 'MARKET_UPDATED'
+}
+
+export interface NexusEventPayload {
+  eventId: string;
+  timestamp: number;
+  type: NexusEvent;
+  source: string;
+  data: any;
+  correlationId?: string;
+  version: string;
+}

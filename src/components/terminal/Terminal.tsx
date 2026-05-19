@@ -24,8 +24,22 @@ export function TerminalCore({ activeModule }: { activeModule: string }) {
 
   return (
     <div id="terminal-core" className="col-span-full lg:col-span-8 bg-nexus-surface border border-nexus-border rounded-lg flex flex-col overflow-hidden relative">
+      {useNervous().marketData?.systemStatus === 'HALTED' && (
+        <div className="bg-red-500/20 border-b border-red-500/50 py-1.5 text-[10px] text-center text-red-500 font-bold uppercase tracking-widest animate-pulse">
+           CRITICAL_SYSTEM_HALT: RISK_PARAMETERS_EXCEEDED
+        </div>
+      )}
+      {useNervous().marketData?.systemStatus === 'CAUTION' && (
+        <div className="bg-amber-500/20 border-b border-amber-500/50 py-1.5 text-[10px] text-center text-amber-500 font-bold uppercase tracking-widest">
+           SYSTEM_CAUTION: ELEVATED_INSTABILITY
+        </div>
+      )}
       <div className="px-5 py-4 border-b border-nexus-border flex justify-between items-center bg-nexus-surface/50">
-        <h3 className="text-xs font-bold text-nexus-subtle uppercase tracking-widest">{activeModule.replace(' ', '_')}</h3>
+        <div className="flex items-center gap-3">
+          <h3 className="text-xs font-bold text-nexus-subtle uppercase tracking-widest">{activeModule.replace(' ', '_')}</h3>
+          <span className="text-[10px] px-1.5 py-0.5 rounded bg-nexus-dark border border-nexus-border text-nexus-muted">v1.1.0</span>
+          <span className={`w-2 h-2 rounded-full ${useNervous().marketData?.systemStatus === 'HALTED' ? 'bg-red-500 animate-pulse' : useNervous().marketData?.systemStatus === 'CAUTION' ? 'bg-amber-500' : 'bg-emerald-500'}`} />
+        </div>
         <div className="flex gap-4 text-[10px] text-nexus-muted font-mono">
           <span>FILTER: ALL</span>
           <span className="hover:text-nexus-accent cursor-pointer transition-colors" onClick={() => addAssistantMessage("EXPORTING_SYSTEM_DATA_OBJECT...")}>EXPORT_LOG</span>

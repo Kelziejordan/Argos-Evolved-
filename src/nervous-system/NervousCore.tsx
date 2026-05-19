@@ -26,6 +26,7 @@ interface NervousContextType {
   executeTrade: (symbol: string, type: 'LONG' | 'SHORT') => Promise<void>;
   closePosition: (tradeId: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
+  sendCommand: (command: string, args?: any) => Promise<void>;
   login: () => Promise<void>;
   logout: () => Promise<void>;
   runDiagnostics: () => Promise<void>;
@@ -117,6 +118,24 @@ export function NervousProvider({ children }: { children: React.ReactNode }) {
   const sendMessage = async (content: string) => {
     if (!content.trim() || isProcessing) return;
     setMessages(prev => [...prev, { role: "user", content, timestamp: new Date().toLocaleTimeString() }]);
+    
+    // Command interception
+    const upperInput = content.toUpperCase().trim();
+    if (upperInput.startsWith('APPROVE ')) {
+      const token = upperInput.replace('APPROVE ', '');
+      await sendCommand('APPROVE', { token });
+      return;
+    }
+    if (upperInput.startsWith('REJECT ')) {
+      const token = upperInput.replace('REJECT ', '');
+      await sendCommand('REJECT', { token });
+      return;
+    }
+    if (upperInput === 'ROLLBACK') {
+      await sendCommand('ROLLBACK');
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const res = await fetch("/api/chat", {
@@ -138,6 +157,19 @@ export function NervousProvider({ children }: { children: React.ReactNode }) {
     await signInWithPopup(auth, new GoogleAuthProvider());
   };
 
+  const sendCommand = async (command: string, args?: any) => {
+    try {
+      await fetch("/api/command", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ command, args }),
+      });
+      addAssistantMessage(`COMMAND_SENT: ${command} ${JSON.stringify(args || {})}`);
+    } catch (e) {
+      console.error("Command failed", e);
+    }
+  };
+
   const logout = async () => {
     await auth.signOut();
   };
@@ -154,7 +186,7 @@ export function NervousProvider({ children }: { children: React.ReactNode }) {
   return (
     <NervousContext.Provider value={{
       user, marketData, trades, messages, isProcessing, isRunningDiagnostics, isAutoBotActive, aggressionMatrix,
-      setAggressionMatrix: setAggressionMatrixWithLog, setIsAutoBotActive, addAssistantMessage, executeTrade, closePosition, sendMessage, login, logout, runDiagnostics
+      setAggressionMatrix: setAggressionMatrixWithLog, setIsAutoBotActive, addAssistantMessage, executeTrade, closePosition, sendMessage, sendCommand, login, logout, runDiagnostics
     }}>
       {children}
     </NervousContext.Provider>

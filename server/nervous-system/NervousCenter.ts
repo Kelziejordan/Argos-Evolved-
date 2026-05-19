@@ -1,9 +1,10 @@
-import { eventBus, NexusEvent } from "./EventBus";
+import { eventBus } from "./event-bus/Bus";
+import { NexusEvent } from "./event-bus/Registry";
 import { marketState } from "../anatomy/state";
 import { getKraken } from "../organs/kraken";
 import { CONFIG, ASSET_MAPPING } from "../genetics/config";
 import { generateSignals } from "../brain/signalGenerator";
-import { saveSnapshot } from "../memory/persistence";
+import { saveSnapshot, loadLastKnownGood } from "../memory/persistence";
 
 export function initializeNervousCenter() {
   console.log("[NERVOUS_CENTER] Initializing coordination layer...");
@@ -14,38 +15,91 @@ export function initializeNervousCenter() {
     applyAtmosphericDrift();
     
     // Broadcast that market has been updated
-    eventBus.dispatch(NexusEvent.MARKET_UPDATED);
+    eventBus.dispatch(NexusEvent.MARKET_UPDATED, {}, 'NERVOUS_CENTER', payload.correlationId);
     
-    if (payload.pulseCount % 60 === 0) {
+    if (payload.data.pulseCount % 60 === 0) {
       eventBus.dispatch(NexusEvent.SYSTEM_ALERT, { message: "SYSTEM_STABILITY_CHECK: NOMINAL", level: "INFO" });
     }
   });
 
+
   // 2. Brain Handler (Signal Generation)
-  eventBus.on(NexusEvent.MARKET_UPDATED, () => {
-    generateSignals();
+  eventBus.on(NexusEvent.MARKET_UPDATED, (payload) => {
+    if (!marketState.killSwitchActive) {
+      generateSignals();
+    }
   });
 
-  // 3. Memory Handler (Snapshots)
+  // 3. Risk Validated Flow
+  eventBus.on(NexusEvent.RISK_CHECK_PASSED, (payload) => {
+    const signal = payload.data;
+    // Check if signal requires approval
+    if (signal.variant === 'emerald') { // High confidence/impact emerald signals require approval
+      eventBus.dispatch(NexusEvent.APPROVAL_REQUIRED, { 
+        type: 'SIGNAL_EXECUTION', 
+        signalId: signal.id,
+        signalTitle: signal.title 
+      }, 'NERVOUS_CENTER', payload.correlationId);
+    } else {
+      // Direct execution for low-risk signals (simulated)
+      executeSimulatedOrder(signal, payload.correlationId);
+    }
+  });
+
+  // 4. Approval Granted Flow
+  eventBus.on(NexusEvent.APPROVAL_GRANTED, (payload) => {
+    if (payload.data.type === 'SIGNAL_EXECUTION') {
+      executeSimulatedOrder(payload.data, payload.correlationId);
+    }
+  });
+
+  // 5. Memory Handler (Snapshots)
   eventBus.on(NexusEvent.MEMORY_SNAPSHOT, () => {
-    console.log("[MEMORY] Triggering periodic snapshot...");
-    saveSnapshot();
+    saveSnapshot(marketState.systemStatus === 'NOMINAL');
   });
 
-  // 4. Command Handler (Log user actions)
+  // 6. Command Handler
   eventBus.on(NexusEvent.COMMAND_RECEIVED, (payload) => {
-    console.log(`[USER_COMMAND] Executing: ${payload.command}`);
+    const { command } = payload.data;
+    if (command === 'ROLLBACK') {
+      const lastGood = loadLastKnownGood();
+      if (lastGood) {
+        Object.assign(marketState, lastGood);
+        eventBus.dispatch(NexusEvent.SYSTEM_ALERT, { message: "ROLLBACK_SUCCESSFUL: SYSTEM_RESTORED_TO_LAST_KNOWN_GOOD", level: "INFO" });
+      } else {
+        eventBus.dispatch(NexusEvent.SYSTEM_ALERT, { message: "ROLLBACK_FAILED: NO_KNOWN_GOOD_SNAPSHOT_AVAILABLE", level: "ERROR" });
+      }
+    }
   });
 
-  // 5. Audit Logger (The emerging audit layer)
+  // 7. Audit Logger
   eventBus.on(NexusEvent.SYSTEM_ALERT, (payload) => {
-    console.log(`[AUDIT_LOG] [${payload.level}] ${payload.message}`);
+    const data = payload.data;
+    console.log(`[AUDIT_LOG] [${data.level}] ${data.message}`);
   });
   
-  eventBus.on(NexusEvent.SIGNAL_GENERATED, (signal) => {
+  eventBus.on(NexusEvent.SIGNAL_GENERATED, (payload) => {
+    const signal = payload.data;
     console.log(`[AUDIT_LOG] [SIGNAL] ${signal.title}: ${signal.desc}`);
   });
 }
+
+function executeSimulatedOrder(signal: any, correlationId: string) {
+  if (marketState.killSwitchActive) {
+    console.log("[NERVOUS_CENTER] Execution blocked by KILL_SWITCH.");
+    return;
+  }
+  
+  console.log(`[EXECUTION] Executing signal: ${signal.title}`);
+  eventBus.dispatch(NexusEvent.ORDER_PLACED, { signalId: signal.id }, 'NERVOUS_CENTER', correlationId);
+  
+  // Simulate order filling
+  setTimeout(() => {
+    eventBus.dispatch(NexusEvent.ORDER_EXECUTED, { signalId: signal.id, status: 'FILLED' }, 'NERVOUS_CENTER', correlationId);
+    eventBus.dispatch(NexusEvent.SYSTEM_ALERT, { message: `ORDER_FILLED: ${signal.title}`, level: 'INFO' });
+  }, 1000);
+}
+
 
 // Internal Logic Gates
 async function updateMarketData() {

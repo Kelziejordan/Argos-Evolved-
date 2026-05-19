@@ -26,6 +26,8 @@ export interface MarketState {
   activeWhales: number;
   krakenConnected: boolean;
   activeSignals: Signal[];
+  killSwitchActive: boolean;
+  systemStatus: 'NOMINAL' | 'CAUTION' | 'HALTED';
 }
 
 export let marketState: MarketState = {
@@ -43,8 +45,11 @@ export let marketState: MarketState = {
   activeSignals: [
     { id: 1, title: 'BTC_BULL_BREAK', desc: 'Heavy whale accumulation detected.', variant: 'emerald', time: 'NOW' },
     { id: 2, title: 'SOL_LIQUIDITY', desc: 'Order flow imbalance on SOL pairs.', variant: 'amber', time: '2m' }
-  ]
+  ],
+  killSwitchActive: false,
+  systemStatus: 'NOMINAL'
 };
+
 
 export const updateMarketState = (newState: Partial<MarketState>) => {
   marketState = { ...marketState, ...newState };

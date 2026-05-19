@@ -1,4 +1,5 @@
 
+import React, { ReactNode } from "react";
 import { Terminal, Globe, Activity, BarChart3, Flame, Shield } from "lucide-react";
 import { useNervous } from "../../nervous-system/NervousCore";
 import { AssetRow } from "../ui/AssetRow";
@@ -88,7 +89,7 @@ export function Sidebar({ activeModule, setActiveModule }: { activeModule: strin
   );
 }
 
-function SidebarGroup({ title, children }: { title: string, children: React.ReactNode }) {
+function SidebarGroup({ title, children }: { title: string, children: ReactNode }) {
   return (
     <div>
       <h3 className="text-[10px] uppercase tracking-[0.2em] text-nexus-subtle mb-3 px-1">{title}</h3>
@@ -97,7 +98,7 @@ function SidebarGroup({ title, children }: { title: string, children: React.Reac
   );
 }
 
-function SidebarItem({ icon, label, active, onClick, id, className = "" }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void, id?: string, className?: string }) {
+function SidebarItem({ icon, label, active, onClick, id, className = "" }: { icon: ReactNode, label: string, active: boolean, onClick: () => void, id?: string, className?: string }) {
   return (
     <div 
       id={id}
