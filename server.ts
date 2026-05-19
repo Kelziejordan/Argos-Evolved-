@@ -1,126 +1,14 @@
 import express from "express";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
-import * as ccxt from 'ccxt';
+import { marketState } from "./server/anatomy/state";
+import { getGemini } from "./server/organs/gemini";
+import { startMarketPulse } from "./server/brain/pulseEngine";
+import { initializeNervousCenter } from "./server/nervous-system/NervousCenter";
+import { loadSnapshot, saveSnapshot } from "./server/memory/persistence";
 
 dotenv.config();
-
-// Kraken client lazy initializer
-let krakenClient: any = null;
-const getKraken = () => {
-  if (!krakenClient) {
-    const apiKey = process.env.KRAKEN_API_KEY;
-    const secret = process.env.KRAKEN_SECRET_KEY;
-    
-    try {
-      // Use standard constructor
-      krakenClient = new ccxt.kraken({
-        apiKey: apiKey && apiKey !== 'your_api_key_here' ? apiKey : undefined,
-        secret: secret && secret !== 'your_secret_key_here' ? secret : undefined,
-      });
-    } catch (e) {
-      console.error("Kraken init failed", e);
-      return null;
-    }
-  }
-  return krakenClient;
-};
-
-// Simulated Market Data State
-let marketState: any = {
-  btc: { price: 68422.50, delta: 0.15, status: 'neutral' },
-  eth: { price: 3521.12, delta: -0.42, status: 'neutral' },
-  sol: { price: 142.88, delta: 1.25, status: 'bullish' },
-  dot: { price: 7.24, delta: 0.05, status: 'neutral' },
-  link: { price: 18.12, delta: -2.1, status: 'bearish' },
-  ada: { price: 0.45, delta: 0.8, status: 'neutral' },
-  xrp: { price: 0.52, delta: -0.1, status: 'neutral' },
-  neuralSentiment: 0.84,
-  quantumInstability: 0.12,
-  activeWhales: 14,
-  krakenConnected: false,
-  activeSignals: [
-    { id: 1, title: 'BTC_BULL_BREAK', desc: 'Heavy whale accumulation detected.', variant: 'emerald', time: 'NOW' },
-    { id: 2, title: 'SOL_LIQUIDITY', desc: 'Order flow imbalance on SOL pairs.', variant: 'amber', time: '2m' }
-  ]
-};
-
-// Background update for simulation + Optional Kraken Sync
-function startMarketPulse() {
-  const symbols = ['BTC/USDT', 'ETH/USDT', 'SOL/USDT', 'DOT/USDT', 'LINK/USDT', 'ADA/USDT', 'XRP/USDT'];
-  const mapping: any = {
-    'BTC/USDT': 'btc',
-    'ETH/USDT': 'eth',
-    'SOL/USDT': 'sol',
-    'DOT/USDT': 'dot',
-    'LINK/USDT': 'link',
-    'ADA/USDT': 'ada',
-    'XRP/USDT': 'xrp'
-  };
-
-  setInterval(async () => {
-    try {
-      const kraken = getKraken();
-      if (kraken) {
-        const tickers = await kraken.fetchTickers(symbols).catch((err: any) => {
-          console.error("Kraken ticker fetch failed", err.message);
-          return null;
-        });
-        
-        if (tickers) {
-          for (const symbol of symbols) {
-            const ticker = tickers[symbol];
-            const key = mapping[symbol];
-            if (ticker && marketState[key]) {
-              marketState[key].price = ticker.last || marketState[key].price;
-              marketState[key].delta = parseFloat(((ticker.percentage || 0)).toFixed(2));
-              
-              // Dynamic status
-              if (marketState[key].delta > 2) marketState[key].status = 'volatile';
-              else if (marketState[key].delta > 0.5) marketState[key].status = 'bullish';
-              else if (marketState[key].delta < -0.5) marketState[key].status = 'bearish';
-              else marketState[key].status = 'neutral';
-            }
-          }
-        }
-      }
-      marketState.krakenConnected = !!(process.env.KRAKEN_API_KEY && process.env.KRAKEN_API_KEY !== 'your_api_key_here');
-    } catch (e) {
-      console.error("Market pulse interval error", e);
-    }
-    
-    // Simulation drift
-    Object.keys(marketState).forEach(key => {
-      if (typeof marketState[key] === 'object' && marketState[key].price) {
-        marketState[key].price += (Math.random() - 0.5) * (marketState[key].price * 0.0001);
-      }
-    });
-
-    // Random Signal Generation
-    if (Math.random() > 0.85) {
-      const assets = ['BTC', 'ETH', 'SOL', 'DOT', 'ADA', 'XRP', 'LINK'];
-      const asset = assets[Math.floor(Math.random() * assets.length)];
-      const types = [
-        { title: `${asset}_VOLATILITY`, desc: 'Unusual volume spike detected.', variant: 'amber' },
-        { title: `${asset}_SQUEEZE`, desc: 'Short liquidations imminent.', variant: 'emerald' },
-        { title: `${asset}_DUMP_RISK`, desc: 'Sell pressure increasing.', variant: 'red' }
-      ];
-      const signal = types[Math.floor(Math.random() * types.length)];
-      marketState.activeSignals = [
-        { id: Date.now(), ...signal, time: 'NOW' },
-        ...marketState.activeSignals.slice(0, 4)
-      ];
-    }
-    
-    marketState.neuralSentiment = Math.max(0, Math.min(1, marketState.neuralSentiment + (Math.random() - 0.5) * 0.01));
-    marketState.quantumInstability = Math.max(0, Math.min(1, marketState.quantumInstability + (Math.random() - 0.5) * 0.005));
-    marketState.activeWhales = Math.max(1, marketState.activeWhales + (Math.random() > 0.5 ? 1 : -1));
-  }, 5000);
-}
-
-const app = express();
 
 async function startServer() {
   const app = express();
@@ -128,26 +16,19 @@ async function startServer() {
 
   app.use(express.json({ limit: '50mb' }));
   
+  const ai = getGemini();
+
+  // Load Organism Memory
+  const savedState = loadSnapshot();
+  if (savedState) {
+    Object.assign(marketState, savedState);
+  }
+
+  // Spinal Cord Initialization
+  initializeNervousCenter();
+  
+  // Heartbeat Initialization
   startMarketPulse();
-
-  // Debug Log Middleware
-  app.use((req, res, next) => {
-    if (req.url.startsWith('/api')) {
-      console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-    }
-    next();
-  });
-
-  // Initialize Gemini
-  const apiKey = process.env.GEMINI_API_KEY;
-  const ai = new GoogleGenAI({
-    apiKey: apiKey || "dummy-key",
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
-  });
 
   // API Routes
   app.get("/api/market-pulse", (req, res) => {

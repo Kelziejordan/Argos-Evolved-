@@ -1,6 +1,6 @@
 {
-  "name": "Nexus AI Gateway",
-  "description": "A high-performance AI workspace for intelligent automation and multimodal interaction.",
+  "name": "HYPERBOT v2.0",
+  "description": "A cybernetic market organism shell featuring real-time Kraken telemetry, signal generation, and autonomous trading simulation.",
   "requestFramePermissions": [
     "camera",
     "microphone"
