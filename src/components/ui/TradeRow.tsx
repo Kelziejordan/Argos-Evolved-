@@ -2,7 +2,7 @@
 import { Activity } from "lucide-react";
 import { Trade } from "../../anatomy/types";
 
-export function TradeRow({ trade, currentPrice, onClose }: { trade: Trade; currentPrice: number | null; onClose?: () => void }) {
+export function TradeRow({ trade, currentPrice, onClose }: { trade: Trade; currentPrice: number | null; onClose?: () => void, key?: any }) {
   const livePnl = currentPrice 
     ? (trade.type === 'LONG' 
         ? ((currentPrice - trade.price) / trade.price) * 100 

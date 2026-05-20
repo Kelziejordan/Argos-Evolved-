@@ -3,7 +3,7 @@ import { CONFIG } from "../genetics/config";
 import { eventBus } from "../nervous-system/event-bus/Bus";
 import { NexusEvent } from "../nervous-system/event-bus/Registry";
 
-export const generateSignals = () => {
+export const generateSignals = (correlationId?: string, causationId?: string) => {
   if (Math.random() > (1 - CONFIG.SIGNAL_PROBABILITY)) {
     const assets = ['BTC', 'ETH', 'SOL', 'DOT', 'ADA', 'XRP', 'LINK'];
     const asset = assets[Math.floor(Math.random() * assets.length)];
@@ -20,12 +20,7 @@ export const generateSignals = () => {
       time: 'NOW'
     };
 
-    marketState.activeSignals = [
-      newSignal,
-      ...marketState.activeSignals.slice(0, 4)
-    ];
-    
-    eventBus.dispatch(NexusEvent.SIGNAL_GENERATED, newSignal, 'BRAIN_SIGNAL_GENERATOR');
+    eventBus.dispatch(NexusEvent.SIGNAL_GENERATED, newSignal, 'BRAIN_SIGNAL_GENERATOR', correlationId, causationId);
     return newSignal;
   }
   return null;

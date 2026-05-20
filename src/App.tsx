@@ -15,7 +15,7 @@ import { GlobalLiquidity } from "./components/telemetry/GlobalLiquidity";
 import { VolatilityModule } from "./components/telemetry/VolatilityModule";
 import { OrderFlow } from "./components/telemetry/OrderFlow";
 import { LiquidationMap } from "./components/telemetry/LiquidationMap";
-import { RiskShield } from "./components/telemetry/RiskShield";
+import { ImmuneDashboard } from "./components/telemetry/ImmuneDashboard";
 
 function OrganismShell() {
   const [activeModule, setActiveModule] = useState("Command Hall");
@@ -44,11 +44,12 @@ function OrganismShell() {
           <MarketPulse />
           
           {activeModule === "Command Hall" && <TerminalCore activeModule={activeModule} />}
+          {activeModule === "Nervous System" && <TerminalCore activeModule={activeModule} />}
           {activeModule === "Global Liquidity" && <GlobalLiquidity />}
           {activeModule === "Volatility Index" && <VolatilityModule />}
           {activeModule === "Order Flow" && <OrderFlow />}
           {activeModule === "Liquidation Map" && <LiquidationMap />}
-          {activeModule === "Risk Shield" && <RiskShield />}
+          {activeModule === "Immune System" && <ImmuneDashboard />}
         </div>
 
         <StatusBar />

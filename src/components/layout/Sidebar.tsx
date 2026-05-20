@@ -21,8 +21,8 @@ export function Sidebar({ activeModule, setActiveModule }: { activeModule: strin
       <nav className="flex-1 p-4 space-y-4 overflow-y-auto">
         <SidebarGroup title="Main Core">
           <SidebarItem id="command-hall-nav" icon={<Terminal className="w-4 h-4" />} label="Command Hall" active={activeModule === "Command Hall"} onClick={() => setActiveModule("Command Hall")} />
+          <SidebarItem icon={<Activity className="w-4 h-4" />} label="Nervous System" active={activeModule === "Nervous System"} onClick={() => setActiveModule("Nervous System")} />
           <SidebarItem id="global-liquidity-nav" icon={<Globe className="w-4 h-4" />} label="Global Liquidity" active={activeModule === "Global Liquidity"} onClick={() => setActiveModule("Global Liquidity")} />
-          <SidebarItem id="volatility-index-nav" icon={<Activity className="w-4 h-4" />} label="Volatility Index" active={activeModule === "Volatility Index"} onClick={() => setActiveModule("Volatility Index")} />
         </SidebarGroup>
 
         <SidebarGroup title="Trading Engine">
@@ -31,9 +31,9 @@ export function Sidebar({ activeModule, setActiveModule }: { activeModule: strin
           <SidebarItem 
             id="risk-shield-nav"
             icon={<Shield className="w-4 h-4" />} 
-            label="Risk Shield" 
-            active={activeModule === "Risk Shield"} 
-            onClick={() => setActiveModule("Risk Shield")} 
+            label="Immune System" 
+            active={activeModule === "Immune System"} 
+            onClick={() => setActiveModule("Immune System")} 
             className="border-[#8fa2bc]"
           />
         </SidebarGroup>

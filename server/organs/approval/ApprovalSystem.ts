@@ -1,12 +1,15 @@
 
-import { eventBus } from './event-bus/Bus';
-import { NexusEvent } from './event-bus/Registry';
+import fs from 'fs';
+import path from 'path';
+import { eventBus } from '../../nervous-system/event-bus/Bus';
+import { NexusEvent } from '../../nervous-system/event-bus/Registry';
 
 /**
  * APPROVAL AUTHORIZATION SYSTEM
  * 
  * Manages token-based approvals for sensitive actions.
  * Ensures the organism doesn't act without explicit human consent when required.
+ * Persists queue to JSONL for digital continuity.
  */
 
 interface ApprovalRequest {
@@ -16,6 +19,8 @@ interface ApprovalRequest {
   timestamp: number;
   correlationId: string;
 }
+
+const QUEUE_FILE = path.join(process.cwd(), 'logs', 'approval_queue.jsonl');
 
 class ApprovalSystem {
   private static instance: ApprovalSystem;
@@ -34,6 +39,7 @@ class ApprovalSystem {
 
   private initialize() {
     console.log("[APPROVAL] System initialized.");
+    this.loadQueue();
 
     // Listen for approval requirements
     eventBus.on(NexusEvent.APPROVAL_REQUIRED, (payload) => {
@@ -54,6 +60,39 @@ class ApprovalSystem {
     setInterval(() => this.cleanup(), 60000);
   }
 
+  private loadQueue() {
+    try {
+      if (fs.existsSync(QUEUE_FILE)) {
+        const lines = fs.readFileSync(QUEUE_FILE, 'utf-8').trim().split('\n');
+        lines.forEach(line => {
+          if (!line) return;
+          const req: ApprovalRequest = JSON.parse(line);
+          if (Date.now() - req.timestamp < 300000) { // Only load non-expired
+             this.queue.set(req.token, req);
+          }
+        });
+        console.log(`[APPROVAL] Restored ${this.queue.size} pending requests.`);
+      }
+    } catch (e) {
+      console.error("[APPROVAL] Failed to load queue", e);
+    }
+  }
+
+  private persistQueue() {
+    try {
+      const dir = path.dirname(QUEUE_FILE);
+      if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+      
+      const content = Array.from(this.queue.values())
+        .map(req => JSON.stringify(req))
+        .join('\n') + '\n';
+      
+      fs.writeFileSync(QUEUE_FILE, content);
+    } catch (e) {
+      console.error("[APPROVAL] Failed to persist queue", e);
+    }
+  }
+
   private addRequest(payload: any) {
     const token = Math.random().toString(36).substring(2, 15);
     const request: ApprovalRequest = {
@@ -65,6 +104,7 @@ class ApprovalSystem {
     };
 
     this.queue.set(token, request);
+    this.persistQueue();
     console.log(`[APPROVAL] Request queued. Token: ${token} | Type: ${request.type}`);
     
     // Broadcast for UI
@@ -81,6 +121,7 @@ class ApprovalSystem {
       console.log(`[APPROVAL] Authorized: ${token}`);
       eventBus.dispatch(NexusEvent.APPROVAL_GRANTED, request.data, 'APPROVAL_SYSTEM', request.correlationId);
       this.queue.delete(token);
+      this.persistQueue();
     }
   }
 
@@ -90,17 +131,21 @@ class ApprovalSystem {
       console.log(`[APPROVAL] Rejected: ${token}`);
       eventBus.dispatch(NexusEvent.APPROVAL_REJECTED, { token, reason: 'USER_REJECTION' }, 'APPROVAL_SYSTEM', request.correlationId);
       this.queue.delete(token);
+      this.persistQueue();
     }
   }
 
   private cleanup() {
     const now = Date.now();
+    let changed = false;
     for (const [token, req] of this.queue.entries()) {
       if (now - req.timestamp > 300000) { // 5 minute expiry
         console.log(`[APPROVAL] Expired: ${token}`);
-        this.reject(token);
+        this.queue.delete(token);
+        changed = true;
       }
     }
+    if (changed) this.persistQueue();
   }
 
   public getQueue() {

@@ -27,6 +27,7 @@ interface NervousContextType {
   closePosition: (tradeId: string) => Promise<void>;
   sendMessage: (content: string) => Promise<void>;
   sendCommand: (command: string, args?: any) => Promise<void>;
+  events: any[];
   login: () => Promise<void>;
   logout: () => Promise<void>;
   runDiagnostics: () => Promise<void>;
@@ -37,6 +38,7 @@ const NervousContext = createContext<NervousContextType | null>(null);
 export function NervousProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<FirebaseUser | null>(null);
   const [marketData, setMarketData] = useState<MarketState | null>(null);
+  const [events, setEvents] = useState<any[]>([]);
   const [trades, setTrades] = useState<Trade[]>([]);
   const [isProcessing, setIsProcessing] = useState(false);
   const [isRunningDiagnostics, setIsRunningDiagnostics] = useState(false);
@@ -63,8 +65,13 @@ export function NervousProvider({ children }: { children: React.ReactNode }) {
     onAuthStateChanged(auth, setUser);
     const pulseTimer = setInterval(async () => {
       try {
-        const res = await fetch("/api/market-pulse");
-        if (res.ok) setMarketData(await res.json());
+        const [marketRes, eventsRes] = await Promise.all([
+          fetch("/api/market-pulse"),
+          fetch("/api/events?limit=30")
+        ]);
+        
+        if (marketRes.ok) setMarketData(await marketRes.json());
+        if (eventsRes.ok) setEvents(await eventsRes.json());
       } catch (e) {
         console.error("Pulse Failed", e);
       }
@@ -185,7 +192,7 @@ export function NervousProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <NervousContext.Provider value={{
-      user, marketData, trades, messages, isProcessing, isRunningDiagnostics, isAutoBotActive, aggressionMatrix,
+      user, marketData, trades, messages, isProcessing, isRunningDiagnostics, isAutoBotActive, aggressionMatrix, events,
       setAggressionMatrix: setAggressionMatrixWithLog, setIsAutoBotActive, addAssistantMessage, executeTrade, closePosition, sendMessage, sendCommand, login, logout, runDiagnostics
     }}>
       {children}

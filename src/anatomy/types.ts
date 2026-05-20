@@ -32,6 +32,9 @@ export interface MarketState {
   activeWhales: number;
   krakenConnected?: boolean;
   activeSignals?: Signal[];
+  killSwitchActive?: boolean;
+  systemStatus?: 'NOMINAL' | 'CAUTION' | 'HALTED' | 'COOLDOWN';
+  cooldownExpiry?: number | null;
 }
 
 export interface Trade {

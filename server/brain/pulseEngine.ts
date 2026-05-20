@@ -10,8 +10,10 @@ export function startMarketPulse() {
   setInterval(async () => {
     pulseCount++;
     
-    // Trigger the tick
-    eventBus.dispatch(NexusEvent.PULSE_TICK, { pulseCount }, 'PULSE_ENGINE');
+    const correlationId = `tick-${Date.now()}-${pulseCount}`;
+    
+    // Trigger the tick with a root correlation ID
+    eventBus.dispatch(NexusEvent.PULSE_TICK, { pulseCount }, 'PULSE_ENGINE', correlationId);
 
     // Periodic Memory Snapshot event
     if (pulseCount % 12 === 0) { // Every minute (12 * 5s)

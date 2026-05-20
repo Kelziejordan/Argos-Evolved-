@@ -1,7 +1,8 @@
 
+import React from "react";
 import { TrendingUp, TrendingDown } from "lucide-react";
 
-export function AssetRow({ label, value, delta, status, onClick }: { label: string, value: string, delta: number, status?: string, onClick?: () => void }) {
+export function AssetRow({ label, value, delta, status, onClick }: { label: string, value: string, delta: number, status?: string, onClick?: () => void, key?: any }) {
   const statusColors: any = {
     bullish: 'bg-emerald-500/20 text-emerald-500 border-emerald-500/30',
     bearish: 'bg-red-500/20 text-red-500 border-red-500/30',

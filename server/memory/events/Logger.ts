@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { eventBus } from '../../nervous-system/event-bus/Bus';
 import { NexusEventPayload } from '../../nervous-system/event-bus/Registry';
+import { replayContext } from '../replay/ReplayContext';
 
 /**
  * PERSISTENT EVENT LOGGER
@@ -23,6 +24,9 @@ export function initializeEventLogger() {
 
   // Listen to the wildcard event for all activity
   eventBus.on('*', (payload: NexusEventPayload) => {
+    // Audit protection: Do NOT log replayed events or we'll get infinite feedback loops or duplicate history.
+    if (replayContext.active) return;
+    
     appendToLog(payload);
   });
 }

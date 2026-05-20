@@ -46,8 +46,13 @@ export enum NexusEvent {
   SYSTEM_ALERT = 'SYSTEM_ALERT',
   AUDIT_LOG = 'AUDIT_LOG',
   ORGANISM_INIT = 'ORGANISM_INIT',
+  SNAPSHOT_RESTORE = 'SNAPSHOT_RESTORE',
   ROLLBACK_COMPLETE = 'ROLLBACK_COMPLETE',
-  MARKET_UPDATED = 'MARKET_UPDATED'
+  MARKET_UPDATED = 'MARKET_UPDATED',
+  REPLAY_STARTED = 'REPLAY_STARTED',
+  REPLAY_COMPLETED = 'REPLAY_COMPLETED',
+  HEARTBEAT_STALLED = 'HEARTBEAT_STALLED',
+  HEARTBEAT_RESUMED = 'HEARTBEAT_RESUMED'
 }
 
 export interface NexusEventPayload {
@@ -57,5 +62,6 @@ export interface NexusEventPayload {
   source: string;
   data: any;
   correlationId?: string;
+  causationId?: string;
   version: string;
 }

@@ -27,10 +27,18 @@ export interface MarketState {
   krakenConnected: boolean;
   activeSignals: Signal[];
   killSwitchActive: boolean;
-  systemStatus: 'NOMINAL' | 'CAUTION' | 'HALTED';
+  systemStatus: 'NOMINAL' | 'CAUTION' | 'HALTED' | 'COOLDOWN';
+  cooldownExpiry: number | null;
 }
 
-export let marketState: MarketState = {
+/**
+ * ORGANISM ANATOMY: STATE
+ * 
+ * PROTECTED: This object is wrapped in a validation proxy.
+ * All mutations MUST go through the StateEngine via the EventBus.
+ * Direct mutation from other subsystems will trigger a warning/error.
+ */
+let _internalState: MarketState = {
   btc: { price: 68422.50, delta: 0.15, status: 'neutral' },
   eth: { price: 3521.12, delta: -0.42, status: 'neutral' },
   sol: { price: 142.88, delta: 1.25, status: 'bullish' },
@@ -47,10 +55,34 @@ export let marketState: MarketState = {
     { id: 2, title: 'SOL_LIQUIDITY', desc: 'Order flow imbalance on SOL pairs.', variant: 'amber', time: '2m' }
   ],
   killSwitchActive: false,
-  systemStatus: 'NOMINAL'
+  systemStatus: 'NOMINAL',
+  cooldownExpiry: null
 };
 
-
-export const updateMarketState = (newState: Partial<MarketState>) => {
-  marketState = { ...marketState, ...newState };
+// State Authorization Token (Internal only)
+let mutationAuthorized = false;
+export const authorizeMutation = (authorized: boolean) => {
+  mutationAuthorized = authorized;
 };
+
+const createProtectedProxy = (state: any, path: string = ''): any => {
+  return new Proxy(state, {
+    set(target, prop, value) {
+      if (!mutationAuthorized) {
+         const fullPath = path ? `${path}.${String(prop)}` : String(prop);
+         console.error(`[STATE_VIOLATION] Unauthorized mutation attempt on: ${fullPath}`);
+         throw new Error(`DIRECT_STATE_MUTATION_FORBIDDEN: Use EventBus -> StateEngine instead.`);
+      }
+      return Reflect.set(target, prop, value);
+    },
+    get(target, prop) {
+      const value = Reflect.get(target, prop);
+      if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+        return createProtectedProxy(value, path ? `${path}.${String(prop)}` : String(prop));
+      }
+      return value;
+    }
+  });
+};
+
+export const marketState = createProtectedProxy(_internalState);

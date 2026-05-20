@@ -1,4 +1,5 @@
 
+import React from "react";
 import { Shield } from "lucide-react";
 import { useNervous } from "../../nervous-system/NervousCore";
 import { TradeRow } from "../ui/TradeRow";

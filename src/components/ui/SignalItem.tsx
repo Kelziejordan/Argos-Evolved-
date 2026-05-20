@@ -1,5 +1,5 @@
 
-export function SignalItem({ title, desc, variant, time, onClick }: { title: string, desc: string, variant: 'emerald' | 'amber' | 'red', time: string, onClick?: () => void }) {
+export function SignalItem({ title, desc, variant, time, onClick }: { title: string, desc: string, variant: 'emerald' | 'amber' | 'red', time: string, onClick?: () => void, key?: any }) {
   const colors = {
     emerald: 'border-emerald-500/50 text-emerald-500',
     amber: 'border-amber-500/50 text-amber-500',

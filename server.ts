@@ -10,6 +10,8 @@ import { NexusEvent } from "./server/nervous-system/event-bus/Registry";
 
 dotenv.config();
 
+import { getRecentEvents } from "./server/memory/events/Logger";
+
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -24,6 +26,12 @@ async function startServer() {
   // API Routes
   app.get("/api/market-pulse", (req, res) => {
     res.json(marketState);
+  });
+
+  app.get("/api/events", async (req, res) => {
+    const limit = parseInt(req.query.limit as string) || 50;
+    const events = await getRecentEvents(limit);
+    res.json(events);
   });
 
   app.post("/api/command", (req, res) => {

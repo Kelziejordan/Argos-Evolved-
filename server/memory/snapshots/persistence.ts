@@ -1,5 +1,5 @@
-import { marketState } from "../anatomy/state";
-import { db } from "../../src/nervous-system/NervousCore"; // We'll move common firebase init later
+import { marketState } from "../../anatomy/state";
+import { db } from "../../../src/nervous-system/NervousCore"; 
 // For now, internal server-side snapshotting
 import fs from 'fs';
 import path from 'path';
